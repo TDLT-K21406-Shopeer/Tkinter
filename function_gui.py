@@ -3,8 +3,8 @@ from tkinter import *
 import tkinter.messagebox as mess
 import smtplib
 from tkinter.scrolledtext import ScrolledText
+from tracemalloc import Statistic
 from turtle import st
-from PIL import ImageTk, Image
 import data_gui as d
 
 # Tạo giao diện
@@ -16,11 +16,10 @@ class Root(Tk):
         # self.geometry("960x540")
         container = Frame(self)
         container.pack(side="top", fill="both", expand=True)
-        container.grid_rowconfigure(0, weight=1)
-        container.grid_columnconfigure(0, weight=1)
+        # self.resizable(False,False)
 
         self.frames ={}
-        for F in (StartPage, PageOne, PageTwo):
+        for F in (StartPage, PageResult):
             page_name = F.__name__
             frame = F(parent=container, controller=self)
             self.frames[page_name] = frame
@@ -36,7 +35,6 @@ class Root(Tk):
 
 # Khung chính
 class StartPage(Frame):
-
     def __init__(self, parent, controller):
         Frame.__init__(self, parent)
         self.controller = controller
@@ -51,43 +49,40 @@ class StartPage(Frame):
         r1=Radiobutton(self, text="Nam",font=d.font_button, variable=self.v0,value=1).grid(row=1,column=1)
         self.img1 = PhotoImage(file=".\Picture\man.png")
         Label(self,image=self.img1).grid(row=1,column=2)
-        Label(self,text="   ").grid(row=1,column=3)
 
         r2=Radiobutton(self, text="Nữ",font=d.font_button, variable=self.v0,value=2).grid(row=1,column=4)
         self.img2 = PhotoImage(file=".\Picture\woman.png")
         Label(self,image=self.img2).grid(row=1,column=5)
-        Label(self,text="   ").grid(row=1,column=6)
-
+        Label(self,text="      ").grid(row=1,column=6)
         # Tuổi
-        self.v1=IntVar()
-        self.v1.set(2)
-        self.age = Spinbox(self, from_= 2, width=43,to=120,textvariable=self.v1)
-        self.age.grid(row=2,column=1,columnspan=5)
+        self.v13=IntVar()
+        self.v13.set(18)
+        self.age = Spinbox(self, from_= 2, width=29, to=120, font=d.font_button, textvariable=self.v13)
+        self.age.grid(row=2,column=1,columnspan=6)
         Label(self,text="  Độ tuổi:",font=d.font_label).grid(sticky=W,row=2,column=0)
         
         # Chiều cao
         self.v2=StringVar()
         self.v2.set("")
-        self.height = Entry(self,width=45,textvariable=self.v2).grid(row=3,column=1,columnspan=5)
-        Label(self,text="  Chiều cao(cm): ",font=d.font_label).grid(row=3,column=0,sticky=W)
+        self.height = Entry(self, width=30, font=d.font_button, textvariable=self.v2).grid(row=4,column=1,columnspan=6)
+        Label(self,text="  Chiều cao(cm): ",font=d.font_label).grid(row=4,column=0,sticky=W)
         
         # Cân nặng
         self.v3=StringVar()
         self.v3.set("")
-        self.weight = Entry(self,width=45,textvariable=self.v3).grid(row=4,column=1,columnspan=5)
-        Label(self,text="  Cân nặng(kg): ",font=d.font_label).grid(row=4,column=0,sticky=W)
+        self.weight = Entry(self, width=30, font=d.font_button, textvariable=self.v3).grid(row=5,column=1,columnspan=6)
+        Label(self,text="  Cân nặng(kg): ",font=d.font_label).grid(row=5,column=0,sticky=W)
         
-        # 
-        self.bmi=StringVar()
-        self.bmi.set("")
-        check = Button(self, text="Kiểm tra", font=d.font_button, command=self.check)
-        check.grid(row=5,column=1,columnspan=2,pady=10)
-        self.result = Button(self, text="Kết quả", font=d.font_button, command=lambda: controller.show_frame("PageOne")).grid(row=5,column=4,columnspan=3,pady=10)
+        # Nút lệnh
+        check = Button(self, text="Kiểm tra", font=d.font_label, fg=d.color_fg, bg=d.color_bg, command=self.check)
+        check.grid(row=6,column=1,columnspan=2,pady=10)
+        self.result = Button(self, text="Tiếp tục", font=d.font_label, fg=d.color_fg, bg=d.color_bg, state=DISABLED, command=lambda: controller.show_frame("PageResult"))
+        self.result.grid(row=6,column=4,columnspan=3,pady=10)
 
     # Kiểm tra dữ liệu nhập của người dùng    
     def check(self):
         try:
-            age = int(self.v1.get())
+            age = int(self.v13.get())
             if age>=2 and age<=120:
                 try:
                     height = float(self.v2.get())
@@ -99,15 +94,21 @@ class StartPage(Frame):
                             if weight<0:
                                 mess.showerror("Lỗi","Cân nặng là một số dương")
                             else:
-                                bmi_index = round(weight/((height/100)**2))
-                                self.bmi.set(bmi_index)
-                                # self.result.config(state=NORMAL)
+                                # Ghi kết quả vào file txt
+                                temp = open("temp.txt","w",encoding="utf-8")
+                                temp.write(f"{self.v0.get()}\n")
+                                temp.write(f"{age}\n")
+                                temp.write(f"{height}\n")
+                                temp.write(f"{weight}")
+                                temp.close()
+                                mess.showinfo("Thông báo","Bạn đã nhập xong dữ liệu, hãy chọn vào Kết quả")
+                                self.result['state'] = NORMAL
                         except:
                             mess.showerror("Lỗi","Cân nặng là một số dương")
                 except:
                     mess.showerror("Lỗi","Chiều cao là một số dương")
             elif age<2 and age>0:
-                mess.showerror("Lỗi","Công thức chỉ áp dụng cho người từ 2 tuổi trở lên")
+                mess.showerror("Lỗi","Công thức chỉ nên áp dụng cho trẻ từ 7 tuổi trở lên")
             elif age<0:
                 mess.showerror("Lỗi","Tuổi là một số dương")
             else:
@@ -116,19 +117,88 @@ class StartPage(Frame):
             mess.showerror("Lỗi","Tuổi là một số nguyên dương")
 
 # Khung làm việc thứ 2
-class PageOne(Frame):
+class PageResult(Frame):
     def __init__(self, parent, controller):
         Frame.__init__(self, parent)
         self.controller = controller
-        Label(self, text="KQ", font="Courier 18").grid(row=0, column=0, columnspan=2)
-        Label(self, text="   BMI:", font=d.font_label).grid(row=1, column=0, sticky=W)
-        Entry(self, textvariable=controller)
-        Button(self, text="Trở về", font=d.font_button, command=lambda: controller.show_frame("StartPage")).grid()
 
-class PageTwo(Frame):
-    def __init__(self, parent, controller):
-        Frame.__init__(self, parent)
-        self.controller = controller
+        self.label_first = Label(self, text="Đây là chỉ số BMI của bạn", font="Courier 18").grid(row=0, column=0, columnspan=3)
+        Label(self, text="   BMI:", font=d.font_label).grid(row=1, column=0, sticky=W)
+        self.str_bmi=StringVar()
+        self.str_state=StringVar()
+        Label(self,text="   Đánh giá:",font=d.font_label).grid(row=2,column=0,sticky=W)
+        Button(self, text="Kết quả", fg=d.color_fg, bg=d.color_bg, font=d.font_label, command=self.show_result).grid(row=0,column=4)
+        Button(self, text="Xóa kết quả", fg=d.color_fg, bg=d.color_bg, font=d.font_label, command=self.reset).grid(row=4,column=3,columnspan=2)
+        Button(self, text="Trở về", fg=d.color_fg, bg=d.color_bg, font=d.font_label, command=lambda: controller.show_frame("StartPage")).grid(row=4,column=2)
+    
+    def show_result(self):
+        pic=0
+        with open("temp.txt","r") as f:
+            data_list = f.readlines()
+        l_strip=[]
+        for s in data_list:
+            l_strip.append(s.strip())
+        bmi=round(float(l_strip[3])/((float(l_strip[2])/100)**2),2)
+        weight_max=float()
+        self.str_bmi.set(bmi)
+        Label(self, text=self.str_bmi.get(), font=d.font_button).grid(row=1,column=1,columnspan=2,pady=5,sticky=W)
+        # state="Loading"
+        if int(l_strip[1])>18:
+            if bmi<d.adult_bmi[0]:
+                state = d.adult_state[0]
+            elif bmi<d.adult_bmi[1]:
+                state = d.adult_state[1]
+            elif bmi<d.adult_bmi[2]:
+                state = d.adult_state[2]
+            elif bmi<d.adult_bmi[3]:
+                state = d.adult_state[3]
+                pic=1
+            elif bmi<d.adult_bmi[4]:
+                state = d.adult_state[4]
+            elif bmi<d.adult_bmi[5]:
+                state = d.adult_state[5]
+            elif bmi<d.adult_bmi[6]:
+                state = d.adult_state[6]
+            else:
+                state = d.adult_state[7]
+        else:
+            idx = d.age_child.index(int(l_strip[1]))
+            if int(l_strip[0])==1:
+                if bmi<d.child_bmi_male[idx][0]:
+                    state = d.child_state[0]
+                elif bmi<d.child_bmi_male[idx][1]:
+                    state = d.child_state[1]
+                    pic=1
+                elif bmi<d.child_bmi_male[idx][2]:
+                    state = d.child_state[2]
+                else:
+                    state = d.child_state[3]
+            else:
+                if bmi<d.child_bmi_female[idx][0]:
+                    state = d.child_state[0]
+                elif bmi<d.child_bmi_female[idx][1]:
+                    state = d.child_state[1]
+                    pic=1
+                elif bmi<d.child_bmi_female[idx][2]:
+                    state = d.child_state[2]
+                else:
+                    state = d.child_state[3]
+        self.str_state.set(state)
+        Label(self,text=self.str_state.get(),font=d.font_button).grid(row=2,column=1,columnspan=2,sticky=W)
+        if pic==1:
+            self.img = PhotoImage(file=".\Picture\healthy.png")
+            Label(self,image=self.img).grid(row=3,column=0,columnspan=5)
+        else:
+            self.img = PhotoImage(file=".\Picture\doctor.png")
+            Label(self,image=self.img).grid(row=3,column=0,columnspan=5)
+
+    def reset(self):
+        self.str_bmi.set("                                     ")
+        self.str_state.set("                                      ")
+        Label(self, text=self.str_bmi.get(), font=d.font_button).grid(row=1,column=1,columnspan=2,pady=5,sticky=W)
+        Label(self,text=self.str_state.get(),font=d.font_button).grid(row=2,column=1,columnspan=2,sticky=W)
+        self.img = PhotoImage(file=".\Picture\delete.png")
+        Label(self,image=self.img).grid(row=3,column=0,columnspan=5)
 
 # Sử dụng Menu
 class MyMenu(Frame):
@@ -139,24 +209,22 @@ class MyMenu(Frame):
         self.MainMenu()
 
     def MainMenu(self):
-        menubar = Menu(self.parent)
-        self.parent.config(menu=menubar)    
-        fileMenu = Menu(menubar)    
-        submenu = Menu(fileMenu)
+        mbar = Menu(self.parent)
+        self.parent.config(menu=mbar)    
+        settingMenu = Menu(mbar)    
+        submenu = Menu(settingMenu)
         submenu.add_command(label="Thông tin", command=self.infor)
         submenu.add_command(label="Mail")
         submenu.add_command(label="Phiên bản", command=self.ver)
-        fileMenu.add_cascade(label="Chi tiết", menu=submenu)
-        fileMenu.add_command(label="Thoát", command=self.quit)
-        menubar.add_cascade(label="Cài đặt", menu=fileMenu)
+        settingMenu.add_cascade(label="Chi tiết", menu=submenu)
+        settingMenu.add_command(label="Thoát", command=self.quit)
+        mbar.add_cascade(label="Cài đặt", menu=settingMenu)
 
     def infor(self):
         mess.showinfo("Thông tin","Đây là sản phẩm của nhóm 4")
 
     def ver(self):
         mess.showinfo("Phiên bản","Đây là phiên bản 2.0")
-
-if __name__ == "__main__":
-    root = Root()
-    app = MyMenu(root)
-    root.mainloop()
+    
+    def show_mail(self):
+        mess.showinfo("Thông báo","Chúng tôi sẽ bổ sung tính năng này sau nhằm mục đích để nhận những góp ý của người dùng về chương trình của chúng tôi")
