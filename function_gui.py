@@ -1,6 +1,7 @@
 #Import các thư viện
 from tkinter import *
 import tkinter.messagebox as mess
+from turtle import width
 import data_gui as d
 
 # Tạo giao diện
@@ -11,6 +12,8 @@ class Root(Tk):
         self.iconbitmap(".\Picture\logo.ico")
         container = Frame(self)
         container.pack(side="top", fill="both", expand=True)
+
+        # Giữ nguyên kích thước chương trình
         self.resizable(False,False)
 
         self.frames ={}
@@ -52,8 +55,8 @@ class StartPage(Frame):
         
         # Tuổi
         self.v13=IntVar()
-        self.v13.set(0)
-        self.age = Spinbox(self, from_= 2, width=29, to=120, font=d.font_button, textvariable=self.v13)
+        self.v13.set(7)
+        self.age = Spinbox(self, from_= 7, width=29, to=120, font=d.font_button, textvariable=self.v13)
         self.age.grid(row=2,column=1,columnspan=6)
         Label(self,text="  Độ tuổi:",font=d.font_label).grid(sticky=W,row=2,column=0)
         
@@ -72,8 +75,8 @@ class StartPage(Frame):
         # Nút lệnh
         check = Button(self, text="Kiểm tra", font=d.font_label, fg=d.color_fg, bg=d.color_bg, command=self.check)
         check.grid(row=6,column=1,columnspan=2,pady=10)
-        self.result = Button(self, text="Tiếp tục", font=d.font_label, fg=d.color_fg, bg=d.color_bg, state=DISABLED, command=lambda: controller.show_frame("PageResult"))
-        self.result.grid(row=6,column=4,columnspan=3,pady=10)
+        self.but_continue = Button(self, text="Tiếp tục", font=d.font_label, fg=d.color_fg, bg=d.color_bg, state=DISABLED, command=lambda: self.on_result(controller))
+        self.but_continue.grid(row=6,column=4,columnspan=3,pady=10)
 
     # Kiểm tra dữ liệu nhập của người dùng    
     def check(self):
@@ -102,7 +105,7 @@ class StartPage(Frame):
                                 temp.write(f"{weight}")
                                 temp.close()
                                 mess.showinfo("Thông báo","Bạn đã nhập xong dữ liệu, hãy chọn vào Tiếp tục")
-                                self.result['state'] = NORMAL
+                                self.but_continue['state'] = NORMAL
                         except:
                             mess.showerror("Lỗi","Cân nặng là một số dương")
                 except:
@@ -115,6 +118,13 @@ class StartPage(Frame):
                 mess.showerror("Lỗi","Kỷ lục thế giới về tuổi là 120 tuổi") 
         except:
             mess.showerror("Lỗi","Tuổi là một số nguyên dương")
+    
+    # Chuyển sang khung kết quả
+    def on_result(self,controller):
+        # Vô hiệu hóa nút Tiếp tục
+        self.but_continue['state'] = DISABLED
+        controller.show_frame("PageResult")
+
 
 # Khung làm việc thứ 2
 class PageResult(Frame):
@@ -122,27 +132,50 @@ class PageResult(Frame):
         Frame.__init__(self, parent)
         self.controller = controller
 
-        self.label_first = Label(self, text="Đây là chỉ số BMI của bạn", font="Courier 18").grid(row=0, column=0, columnspan=3)
-        Label(self, text="   BMI:", font=d.font_label).grid(row=1, column=0, sticky=W)
+        self.label_first = Label(self, text="Xem kết quả BMI của bạn tại đây:", font=d.font_button).grid(row=0, column=0, columnspan=3)
 
+        Label(self, text="   BMI:", font=d.font_label).grid(row=1, column=0, sticky=W)
         self.str_bmi=StringVar()
+
+        # frame_entry=Frame(self)
+        # frame_entry.grid(row=3,column=0,columnspan=5)
+        # frame_entry.rowconfigure(3, weight=1)
+        # frame_entry.columnconfigure(3, weight=1)
+        # self.str_blue = StringVar()
+        # self.str_blue.set("")
+        # self.str_green = StringVar()
+        # self.str_green.set("")
+        # self.str_red = StringVar()
+        # self.str_red.set("")
+        # self.entry_blue = Entry(frame_entry, width=15, textvariable=self.str_blue, bg="blue").grid(row=0,column=0)
+        # self.entry_green = Entry(frame_entry, width=15, textvariable=self.str_blue, bg="green").grid(row=0,column=1)
+        # self.entry_red = Entry(frame_entry, width=15, textvariable=self.str_blue, bg="red").grid(row=0,column=2)
+
         self.str_state=StringVar()
         Label(self,text="   Đánh giá:",font=d.font_label).grid(row=2,column=0,sticky=W)
-        Button(self, text="Kết quả", fg=d.color_fg, bg=d.color_bg, font=d.font_label, command=self.show_result).grid(row=0,column=4)
+
+        Button(self, text="Kết quả", fg=d.color_fg,font=d.font_label, command=self.show_result).grid(row=0,column=4)
         Button(self, text="Xóa kết quả", fg=d.color_bg, bg=d.color_fg, font=d.font_label, command=self.reset).grid(row=4,column=3,columnspan=2)
         Button(self, text="Trở về", fg=d.color_fg, bg=d.color_bg, font=d.font_label, command=lambda: controller.show_frame("StartPage")).grid(row=4,column=2)
     
     def show_result(self):
+        self.reset()
         pic=0
+
+        # Đọc dữ liệu file txt
         with open("temp.txt","r") as f:
             data_list = f.readlines()
         l_strip=[]
         for s in data_list:
             l_strip.append(s.strip())
-        bmi=round(float(l_strip[3])/((float(l_strip[2])/100)**2),2)
+
+        # Tính BMI
+        bmi=round(float(l_strip[3])/((float(l_strip[2])/100)**2),1)
         self.str_bmi.set(bmi)
+
         Label(self, text=self.str_bmi.get(), font=d.font_button).grid(row=1,column=1,columnspan=2,pady=5,sticky=W)
-        # state="Loading"
+
+        # Kiểm tra BMI
         if int(l_strip[1])>18:
             if bmi<d.adult_bmi[0]:
                 state = d.adult_state[0]
@@ -185,24 +218,24 @@ class PageResult(Frame):
                     state = d.child_state[3]
         self.str_state.set(state)
         Label(self,text=self.str_state.get(),font=d.font_button).grid(row=2,column=1,columnspan=2,sticky=W)
+
         if pic==1:
             self.img = PhotoImage(file=".\Picture\healthy.png")
-            Label(self,image=self.img).grid(row=3,column=0,columnspan=5)
+            self.pic=Label(self,image=self.img).grid(row=3,column=0,columnspan=5)
         else:
             self.img = PhotoImage(file=".\Picture\doctor.png")
-            Label(self,image=self.img).grid(row=3,column=0,columnspan=5)
+            self.pic=Label(self,image=self.img).grid(row=3,column=0,columnspan=5)
 
+    # Tạo lớp phủ lên nhãn cũ
     def reset(self):
-        self.str_bmi.set("                                     ")
-        self.str_state.set("                                      ")
+        self.str_bmi.set("                                   ")
+        self.str_state.set("                                   ")
         Label(self, text=self.str_bmi.get(), font=d.font_button).grid(row=1,column=1,columnspan=2,pady=5,sticky=W)
-        Label(self,text=self.str_state.get(),font=d.font_button).grid(row=2,column=1,columnspan=2,sticky=W)
+        Label(self, text=self.str_state.get(), font=d.font_button).grid(row=2,column=1,columnspan=2,sticky=W)
         self.img = PhotoImage(file=".\Picture\delete.png")
-        Label(self,image=self.img).grid(row=3,column=0,columnspan=5)
 
 # Sử dụng Menu
 class MyMenu(Frame):
-    
     def __init__(self, parent):
         Frame.__init__(self, parent)
         self.parent = parent
@@ -228,3 +261,9 @@ class MyMenu(Frame):
     
     def show_mail(self):
         mess.showinfo("Thông báo","Chúng tôi sẽ bổ sung tính năng này sau nhằm mục đích để nhận những góp ý của người dùng về chương trình của chúng tôi")
+
+from function_gui import *
+if __name__ == "__main__":
+    root = Root()
+    app = MyMenu(root)
+    root.mainloop()
